@@ -8,17 +8,26 @@ public class BallController : MonoBehaviour
     [SerializeField] private Rigidbody2D rb;
     public float speed = 15f;
     private float currentSpeed;
+    private float directionReset = 1;
 
     private void Start()
     {
+        ResetBall();
+    }
+
+    public void ResetBall()
+    {
+        gameObject.SetActive(true);
+        float posY = Random.Range(-4f, 4f);
+        transform.position = new Vector3(0, posY, 0);
+
         // Tạo hướng và lực ngẫu nhiên
-        float x = Random.Range(0, 2) == 0 ? -1 : 1;
         float y = Random.Range(0, 2) == 0 ? -1 : 1;
         currentSpeed = speed;
 
         if (rb != null)
         {
-            rb.velocity = new Vector2(x, y).normalized * speed;
+            rb.velocity = new Vector2(directionReset, y).normalized * currentSpeed;
         }
     }
 
@@ -37,11 +46,31 @@ public class BallController : MonoBehaviour
 
             float directionX = transform.position.x > 0 ? -1 : 1;
 
-            if(rb != null)
-            {
-                rb.velocity = new Vector2(directionX, offset).normalized * speed;
-            }
-            speed += 0.5f;
+            // Hướng bóng bật ra
+            Vector2 newDir = new Vector2(directionX, offset).normalized;
+
+            // Lấy vận tốc paddle
+            float paddleBoost = offset;
+
+            // Áp dụng vận tốc mới
+            rb.velocity = newDir * (currentSpeed + paddleBoost);
+            currentSpeed += 1f;
+        }
+
+        if (collision.gameObject.CompareTag("ZonePlayer"))
+        {
+            gameObject.SetActive(false);
+            directionReset = 1;
+            Invoke("ResetBall", 1f);
+            GameManager.Instance.IncreaseScoreAI();
+        }
+
+        if (collision.gameObject.CompareTag("ZoneAI"))
+        {
+            gameObject.SetActive(false);
+            directionReset = -1;
+            Invoke("ResetBall", 1f);
+            GameManager.Instance.IncreaseScorePlayer();
         }
     }
 }
